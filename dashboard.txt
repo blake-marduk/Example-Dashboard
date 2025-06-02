@@ -1,0 +1,47 @@
+WITH MIKES_OPS AS (SELECT DISTINCT team_member.opportunityid
+FROM `corpsvc_fint_prd_us_ews_sfdc_storage.sfdc_opportunityteammember_hist` team_member
+
+ WHERE
+ team_member.Name = 'Michael Ramer')
+SELECT
+  opportunity.Name Opportunity_Name,
+  account.name Account_name,
+  account.efx_id__c EFX_ID,
+  opportunity.StageName,
+  Opportunity.Type as OpportunityType,
+	Opportunity.Close_Reason__c,
+  Opportunity.Project_Plan_URL__c,
+	opportunity.CloseDate Close_Date,
+  owner.name Opportunity_Owner,
+  creator.name OpportunityCreator,
+	assets.Name AS AssetName,
+	assets.Product_Family__c,
+	DATE(assets.Asset_Live_Date__c) Asset_Live_Date,
+	assets.Product_Line__c,
+date(opportunity.createddate) as Opportunity_Created_Date,
+Total_Contract_Revenue__c,
+case when Total_Contract_Revenue__c > 0 then 'Revenue Generating'
+else 'Non Revenue Generating' end as Revenue_Generating,
+case when contains_substr(opportunity.Name,'TWN') or contains_substr(opportunity.Name, 'Twn') then true else false end as TWN,
+
+'https://efx4biz.lightning.force.com/lightning/r/Opportunity/' || opportunity.id ||'/view' as Opportunity_URL
+
+FROM
+  `corpsvc-fint-edh1-prd-de9f.corpsvc_fint_prd_us_ews_sfdc_storage.sfdc_opportunity_hist` opportunity
+LEFT JOIN
+  `corpsvc-fint-edh1-prd-de9f.corpsvc_fint_prd_us_ews_sfdc_storage.sfdc_user` owner
+ON
+  opportunity.OwnerId = owner.Id
+LEFT JOIN
+  `corpsvc-fint-edh1-prd-de9f.corpsvc_fint_prd_us_ews_sfdc_storage.sfdc_user` creator
+ON
+  opportunity.CreatedById = creator.Id
+LEFT JOIN
+  `corpsvc-fint-edh1-prd-de9f.corpsvc_fint_prd_us_ews_sfdc_storage.sfdc_account_hist` account
+ON opportunity.AccountId = account.id
+LEFT JOIN 
+	`corpsvc-fint-edh1-prd-de9f.corpsvc_fint_prd_us_ews_sfdc_storage.sfdc_asset` assets
+ON account.id = assets.AccountId
+
+INNER JOIN 
+MIKES_OPS ON MIKES_OPS.opportunityid = opportunity.Id
